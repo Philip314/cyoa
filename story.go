@@ -2,8 +2,36 @@ package cyoa
 
 import (
 	"encoding/json"
+	"html/template"
 	"io"
+	"net/http"
 )
+
+func init() {
+	htmlTemplate = template.Must(template.New("").Parse(defaultHtmlTemplate))
+}
+
+var htmlTemplate *template.Template
+
+var defaultHtmlTemplate = `
+<!DOCTYPE html>
+<html>
+	<head>
+	<meta charset="utf-8"/>
+	<title>Choose Your Own Adventure</title>
+	</head>
+	<body>
+		<h1>{{.Title}}</h1>
+		{{range .Story}}
+			<p>{{.}}</p>
+		{{end}}
+		<ul>
+		{{range .Options}}
+			<li><a href="/{{.Arc}}">{{.Text}}</a></li>
+		{{end}}
+		<ul>
+	</body>
+</html>`
 
 type Story map[string]Chapter
 
@@ -27,4 +55,19 @@ func CreateStory(r io.Reader) (Story, error) {
 	}
 
 	return story, nil
+}
+
+func StoryHandler(s Story) http.Handler {
+	return storyHandler{s}
+}
+
+type storyHandler struct {
+	story Story
+}
+
+func (s storyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := htmlTemplate.Execute(w, s.story["intro"])
+	if err != nil {
+		panic(err)
+	}
 }

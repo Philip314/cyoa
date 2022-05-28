@@ -66,7 +66,12 @@ type storyHandler struct {
 }
 
 func (s storyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := htmlTemplate.Execute(w, s.story["intro"])
+	path := r.URL.Path
+	if path == "" || path == "/" {
+		path = "/intro"
+	}
+	path = path[1:]
+	err := htmlTemplate.Execute(w, s.story[path])
 	if err != nil {
 		panic(err)
 	}

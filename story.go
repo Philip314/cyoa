@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -71,8 +72,14 @@ func (s storyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		path = "/intro"
 	}
 	path = path[1:]
-	err := htmlTemplate.Execute(w, s.story[path])
-	if err != nil {
-		panic(err)
+
+	if chapter, ok := s.story[path]; ok {
+		err := htmlTemplate.Execute(w, chapter)
+		if err != nil {
+			log.Printf("%v", err)
+			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+		}
+		return
 	}
+	http.Error(w, "Chapter not found.", http.StatusNotFound)
 }

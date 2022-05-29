@@ -108,12 +108,17 @@ func CreateStory(r io.Reader) (Story, error) {
 	return story, nil
 }
 
-func StoryHandler(s Story) http.Handler {
-	return storyHandler{s}
+func StoryHandler(s Story, options ...HandlerOption) http.Handler {
+	storyHandler := storyHandler{s, htmlTemplate}
+	for _, v := range options {
+		v(&storyHandler)
+	}
+	return storyHandler
 }
 
 type storyHandler struct {
-	story Story
+	story    Story
+	template *template.Template
 }
 
 func (s storyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -124,7 +129,7 @@ func (s storyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path = path[1:]
 
 	if chapter, ok := s.story[path]; ok {
-		err := htmlTemplate.Execute(w, chapter)
+		err := s.template.Execute(w, chapter)
 		if err != nil {
 			log.Printf("%v", err)
 			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
@@ -132,4 +137,12 @@ func (s storyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Error(w, "Chapter not found.", http.StatusNotFound)
+}
+
+type HandlerOption func(*storyHandler)
+
+func UseTemplate(template *template.Template) HandlerOption {
+	return func(sh *storyHandler) {
+		sh.template = template
+	}
 }

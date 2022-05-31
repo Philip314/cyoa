@@ -109,7 +109,7 @@ func CreateStory(r io.Reader) (Story, error) {
 }
 
 func StoryHandler(s Story, options ...HandlerOption) http.Handler {
-	storyHandler := storyHandler{s, htmlTemplate}
+	storyHandler := storyHandler{s, htmlTemplate, defaultPathParseFunc}
 	for _, v := range options {
 		v(&storyHandler)
 	}
@@ -119,14 +119,11 @@ func StoryHandler(s Story, options ...HandlerOption) http.Handler {
 type storyHandler struct {
 	story    Story
 	template *template.Template
+	pathFunc func(*http.Request) string
 }
 
 func (s storyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	if path == "" || path == "/" {
-		path = "/intro"
-	}
-	path = path[1:]
+	path := s.pathFunc(r)
 
 	if chapter, ok := s.story[path]; ok {
 		err := s.template.Execute(w, chapter)
@@ -139,10 +136,28 @@ func (s storyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Chapter not found.", http.StatusNotFound)
 }
 
+// Default method to parse paths with no prefix
+func defaultPathParseFunc(r *http.Request) string {
+	path := r.URL.Path
+	if path == "" || path == "/" {
+		path = "/intro"
+	}
+	return path[1:]
+}
+
+// Functional option to customise story handler
 type HandlerOption func(*storyHandler)
 
+// Option to assign template to handle HTML
 func UseTemplate(template *template.Template) HandlerOption {
 	return func(sh *storyHandler) {
 		sh.template = template
+	}
+}
+
+// Option to assign a function to handle URL path parsing
+func UsePathFunc(pathFunc func(*http.Request) string) HandlerOption {
+	return func(sh *storyHandler) {
+		sh.pathFunc = pathFunc
 	}
 }

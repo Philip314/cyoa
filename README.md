@@ -3,6 +3,7 @@
 ## About
 
 Web application of a story with a series of chapters where you can choose an option to go to the next chapter.
+
 I created this from following [Gophercises](https://gophercises.com/ "Gophercises") to learn Go.
 
 ## Getting Started

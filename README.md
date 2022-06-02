@@ -18,6 +18,6 @@ I created this from following [Gophercises](https://gophercises.com/ "Gophercise
 $ go run cmd/cyoaweb/main.go -help
  -file string
         JSON file of story (default "gopher.json")
-  -port int
+ -port int
         Port that application runs on (default 8080)
 ```
